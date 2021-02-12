@@ -1,0 +1,81 @@
+#- hosts: all
+#  vars_prompt: 
+#  -  name: username
+#     prompt: " Enter your Name : "
+#     private: no
+#  tasks: 
+#  -  debug:
+#       msg: "hello {{username}}"
+
+
+- hosts: all
+  vars_prompt: 
+  -  name: foldername
+     prompt: " Enter your Directory Name "
+     private: no
+
+  -  name: confdirectory
+     prompt: " Enter your Configuration Directory Name "
+     private: no
+
+  -  name: portno
+     prompt: " Enter your port number "
+     private: no
+
+
+  tasks:
+  -  file:
+       state: directory
+       path: "{{foldername}}"
+
+  - mount:
+      src: "/dev/cdrom"
+      path: "{{foldername}}"
+      state: mounted
+      fstype: "iso9660"
+
+  - yum_repository:
+      baseurl: "{{foldername}}/AppStream"
+      name: "myappstream"
+      description: "My AppStream Packages"
+      gpgcheck: no
+
+  - yum_repository:
+      baseurl: "{{foldername}}/BaseOS"
+      name: "myBaseOS"
+      description: "My BaseOS Packages"
+      gpgcheck: no
+
+  - package:
+      name: "httpd"
+      state: present
+
+  - template:
+      dest: "/etc/httpd/conf.d/configurefile.conf"
+      src: "configurefile.conf"
+
+  - file:
+      state: directory
+      path: "/var/www/{{confdirectory}}"
+
+  - firewalld:
+      port: "{{portno}}/tcp"
+      state: enabled
+      permanent: yes
+      immediate: yes
+
+  - name: Copy file
+    template:
+      dest: "/var/www/{{confdirectory}}/index.html"
+      src: "index.html"
+    notify: web
+
+  handlers:
+  - name: web
+    service:
+      name: "httpd"
+      state: restarted
+      enabled: yes
+
+
+
