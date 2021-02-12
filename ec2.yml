@@ -1,6 +1,6 @@
 - hosts: localhost
   vars_files:
-    -  AWS/key.yml
+    -  key.yml
   tasks:
     - ec2_instance:
         region: ap-south-1
